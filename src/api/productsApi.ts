@@ -1,6 +1,6 @@
 import { ProductWithQuantity } from '../data/sampleData';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://web-pos-back-end.vercel.app/api';
 
 export const productsApi = {
   async getAllProducts(): Promise<ProductWithQuantity[]> {
