@@ -14,24 +14,35 @@ export default function Sales() {
   }, [dispatch]);
 
   const paymentMethods = useMemo(() => {
-    const methods = new Set(sales.map((s) => s.payment_method));
+    const methods = new Set(sales.filter(s => s.payment_method).map((s) => s.payment_method));
     return ['all', ...Array.from(methods)];
   }, [sales]);
 
   const filteredSales = useMemo(() => {
     return sales.filter((sale) => {
+      const saleId = sale.sale_id || '';
+      const customerContact = sale.customer_contact || '';
+      
       const matchesSearch =
-        sale.sale_id.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        sale.customer_contact.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        saleId.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        customerContact.toLowerCase().includes(filters.searchTerm.toLowerCase());
 
       const matchesPayment = filters.paymentMethod === 'all' || sale.payment_method === filters.paymentMethod;
 
       let matchesDate = true;
-      if (filters.startDate) {
-        matchesDate = matchesDate && new Date(sale.sale_date) >= new Date(filters.startDate);
+      if (filters.startDate && sale.sale_date) {
+        try {
+          matchesDate = matchesDate && new Date(sale.sale_date) >= new Date(filters.startDate);
+        } catch {
+          matchesDate = false;
+        }
       }
-      if (filters.endDate) {
-        matchesDate = matchesDate && new Date(sale.sale_date) <= new Date(filters.endDate);
+      if (filters.endDate && sale.sale_date) {
+        try {
+          matchesDate = matchesDate && new Date(sale.sale_date) <= new Date(filters.endDate);
+        } catch {
+          matchesDate = false;
+        }
       }
 
       return matchesSearch && matchesPayment && matchesDate;
@@ -39,7 +50,14 @@ export default function Sales() {
   }, [sales, filters]);
 
   const sortedSales = useMemo(() => {
-    return [...filteredSales].sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime());
+    return [...filteredSales].sort((a, b) => {
+      try {
+        if (!a.sale_date || !b.sale_date) return 0;
+        return new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime();
+      } catch {
+        return 0;
+      }
+    });
   }, [filteredSales]);
 
   const paginatedSales = useMemo(() => {
@@ -121,114 +139,128 @@ export default function Sales() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sale ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Items
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Subtotal
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tax
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Discount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Payment
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedSales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {sale.sale_id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {sale.customer_contact || 'Walk-in'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {new Date(sale.sale_date).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {sale.sale_items?.length || 0}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${sale.sub_total.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    ${sale.tax_amount.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    ${sale.discount_amount.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                    ${sale.total_amount.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                      {sale.payment_method}
-                    </span>
-                  </td>
+          {paginatedSales.length > 0 ? (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sale ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Items
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Subtotal
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tax
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Discount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedSales.map((sale) => (
+                  <tr key={sale.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {sale.sale_id || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {sale.customer_contact || 'Walk-in'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {sale.sale_date ? (() => {
+                        try {
+                          return new Date(sale.sale_date).toLocaleString();
+                        } catch {
+                          return 'Invalid date';
+                        }
+                      })() : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {sale.sale_items?.length || 0}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${(sale.sub_total || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      ${(sale.tax_amount || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      ${(sale.discount_amount || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                      ${(sale.total_amount || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {sale.payment_method || 'N/A'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="p-8 text-center text-gray-500">
+              No sales found
+            </div>
+          )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">Items per page:</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
+        {paginatedSales.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">Items per page:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Next
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
