@@ -1,36 +1,42 @@
-import { useEffect } from 'react';
-import { Package } from 'lucide-react';
-import { useAppDispatch } from './store/hooks';
-import { fetchProducts } from './store/productsSlice';
-import ProductFilters from './components/ProductFilters';
-import ProductTable from './components/ProductTable';
-import StatsCards from './components/StatsCards';
+import { useState } from 'react';
+import Sidebar from './components/Sidebar';
+import Dashboard from './pages/Dashboard';
+import Products from './pages/Products';
+import Suppliers from './pages/Suppliers';
+import Sales from './pages/Sales';
+import SaleItems from './pages/SaleItems';
+import Customers from './pages/Customers';
 
 function App() {
-  const dispatch = useAppDispatch();
+  const [activePage, setActivePage] = useState('dashboard');
 
-  useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'products':
+        return <Products />;
+      case 'suppliers':
+        return <Suppliers />;
+      case 'sales':
+        return <Sales />;
+      case 'sale-items':
+        return <SaleItems />;
+      case 'customers':
+        return <Customers />;
+      default:
+        return <Dashboard />;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-blue-600 p-3 rounded-xl shadow-lg">
-              <Package className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Product Inventory</h1>
-              <p className="text-gray-600 mt-1">Manage and track your product stock</p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar activePage={activePage} onPageChange={setActivePage} />
 
-        <StatsCards />
-        <ProductFilters />
-        <ProductTable />
+      <div className="flex-1 lg:ml-0">
+        <main className="p-6 lg:p-8 pt-16 lg:pt-8">
+          {renderPage()}
+        </main>
       </div>
     </div>
   );
