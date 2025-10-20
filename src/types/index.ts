@@ -29,30 +29,31 @@ export interface Supplier {
 }
 
 export interface Sale {
-  id: number;
-  sale_id: string;
-  customer_id: number | null;
-  customer_contact: string;
-  sale_date: string;
-  sub_total: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  paid_amount: number;
-  change_amount: number;
-  payment_method: string;
-  sale_items: SaleItem[];
+  id: string;
+  mysqlId?: number;
+  saleId: string;
+  customerId: number | null;
+  customerContact: string;
+  saleDate: string;
+  subTotal: string | number;
+  taxAmount: string | number;
+  discountAmount: string | number;
+  totalAmount: string | number;
+  paidAmount: string | number;
+  changeAmount: string | number;
+  paymentMethod: string;
+  saleItems: SaleItem[];
+  timestamp: number;
 }
 
 export interface SaleItem {
-  id: number;
-  sale_id: string;
-  product_id: number;
-  product_name: string;
+  mysqlId?: number;
+  productId: number;
+  productName: string;
   category: string;
   quantity: number;
-  unit_price: number;
-  sub_total: number;
+  unitPrice: string | number;
+  subTotal: string | number;
 }
 
 export interface Customer {
